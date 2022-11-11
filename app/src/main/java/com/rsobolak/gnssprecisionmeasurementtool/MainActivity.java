@@ -1,14 +1,23 @@
 package com.rsobolak.gnssprecisionmeasurementtool;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.PackageManagerCompat;
+import androidx.core.content.PermissionChecker;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.lang.reflect.Array;
+import java.security.Permission;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Timer;
 
 public class MainActivity extends AppCompatActivity {
@@ -48,6 +57,22 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (!gnssTimerTask.isRunning && requestCode == 6)
+        {
+            int idx = Arrays.asList(permissions).indexOf(Manifest.permission.ACCESS_FINE_LOCATION);
+            if (grantResults[idx] == PackageManager.PERMISSION_GRANTED)
+            {
+                gnssTimerTask.StartLocationUpdates();
+            }
+            else
+            {
+                Toast.makeText(this, "You need to grant location permission", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
 }
 
 
