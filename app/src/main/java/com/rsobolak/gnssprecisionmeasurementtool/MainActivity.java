@@ -2,13 +2,17 @@ package com.rsobolak.gnssprecisionmeasurementtool;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.PackageManagerCompat;
 import androidx.core.content.PermissionChecker;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Pair;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -17,15 +21,13 @@ import android.widget.Toast;
 import java.lang.reflect.Array;
 import java.security.Permission;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Timer;
 
 public class MainActivity extends AppCompatActivity {
-    private final int FREQUENCY = 5;
     private Button startStopButton;
     private boolean running;
-    private Timer timer;
-    private GNSSMeasureTimer gnssTimerTask;
 
     private TextView textView;
 
@@ -39,17 +41,37 @@ public class MainActivity extends AppCompatActivity {
         textView = (TextView) findViewById(R.id.textView);
         textView = (TextView) findViewById(R.id.textView);
 
+        ArrayList<Pair<String, Integer>> permissionsToAskFor = new ArrayList<Pair<String, Integer>>();
+
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+//            context.requestPermissions(new String [] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 2);
+            permissionsToAskFor.add(new Pair<>(Manifest.permission.WRITE_EXTERNAL_STORAGE, 2));
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+//            context.requestPermissions(new String [] {Manifest.permission.READ_EXTERNAL_STORAGE}, 3);
+            permissionsToAskFor.add(new Pair<>(Manifest.permission.READ_EXTERNAL_STORAGE, 3));
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.MANAGE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+//            context.requestPermissions(new String [] {Manifest.permission.MANAGE_EXTERNAL_STORAGE}, 4);
+            permissionsToAskFor.add(new Pair<>(Manifest.permission.MANAGE_EXTERNAL_STORAGE, 4));
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            context.requestPermissions(new String [] {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            permissionsToAskFor.add(new Pair<>(Manifest.permission.ACCESS_FINE_LOCATION, 1));
+        }
+
+        if (permissionsToAskFor.size() > 0)
+        {
+            String[] permissions = permissionsToAskFor.stream().map(el -> el.first).toArray(String[]::new);
+            this.requestPermissions(permissions, 6);
+        }
+
         startStopButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if(running) {
-                    timer.cancel();
-                    timer.purge();
+                    v.getContext().stopService(new Intent(v.getContext(), GNSSMeasureService.class));
                     running = false;
                     startStopButton.setText("Start");
                 } else {
-                    timer = new Timer(true);
-                    gnssTimerTask = new GNSSMeasureTimer((AppCompatActivity) v.getContext());
-                    timer.scheduleAtFixedRate(gnssTimerTask, 0, FREQUENCY * 1000);
+                    v.getContext().startService(new Intent(v.getContext(), GNSSMeasureService.class));
                     running = true;
                     startStopButton.setText("Stop");
                 }
@@ -57,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @Override
+/*    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (!gnssTimerTask.isRunning && requestCode == 6)
@@ -72,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "You need to grant location permission", Toast.LENGTH_LONG).show();
             }
         }
-    }
+    }*/
 }
 
 
